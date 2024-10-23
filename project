@@ -1,0 +1,71 @@
+
+
+
+Here are the codes: 
+-- Customer that made the most Purchases
+with most_purchased as (select customer_id, count(customer_id) as cnt 
+						from orders 
+                        group by 1 
+                        order by count(customer_id) desc 
+                        limit 1)
+select c.name, m.cnt as no_of_purchased from most_purchased as m
+join customers c on c.id = m.customer_id;
+
+-- List the top 5 products by total sales (in terms of quantity).
+select p.name, o.product_id, sum(o.quantity) as total_saled 
+from order_items o
+join products p 
+on p.id = o.product_id 
+group by 2 
+order by 3 desc
+limit 5 ;
+
+-- Calculate the total revenue generated from all orders.
+select sum(amount) as total_revenue from payments;
+
+
+-- Find all customers who have made purchases worth more than $500 in total.
+select c.name from customers c 
+left join orders o on c.id = o.customer_id
+left join order_items oi on oi.order_id = o.id
+where oi.order_id in (select order_id from payments 
+						group by order_id 
+                        having sum(amount) > 500) ;
+                        
+-- Which payment method is used most frequently?
+select method, count(method) as total_payment_method 
+from payments 
+group by 1 
+order by count(method) desc
+limit 1;
+
+-- Find the average order value.
+select avg(amount) as average_value from payments;
+
+-- List the top 3 customers by total amount spent.
+
+select c.name, o.customer_id, sum(p.amount) as total_amount from customers c 
+left join orders o on o.customer_id = c.id
+left join order_items oi on oi.order_id = o.id
+left join payments p on p.order_id = oi.order_id
+group by 1, 2
+order by sum(amount) desc
+limit 3;
+
+-- Find the total quantity of products still available in stock.
+with stock_left as (select p.name, (p.quantity - oi.quantity)  as stock_left from products p 
+join order_items oi on oi.product_id = p.id)
+select sum(stock_left) as total_stock_left from stock_left;
+
+-- List all the orders placed in the last 7 days.
+select * from orders 
+where date >= (select (max(date) - interval 7 day) as date from orders);
+
+-- Which product has the highest average order quantity per order?
+select p.name, oi.product_id, avg(oi.quantity) as avg_order_quantity 
+from products p 
+left join order_items oi
+on oi.product_id = p.id
+group by 1, 2
+order by 3 desc
+limit 1;
